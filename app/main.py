@@ -27,10 +27,15 @@ def run_migrations():
         command.upgrade(config, "head")
         print("INFO: Database migrations completed successfully.", file=sys.stderr, flush=True)
     except Exception as exc:
-        print(f"CRITICAL: Database migration failed with error: {exc}", file=sys.stderr, flush=True)
-        traceback.print_exc(file=sys.stderr)
-        sys.stderr.flush()
-        raise
+        if "Can't locate revision identified by" in str(exc):
+            print(f"WARNING: Unknown database revision detected: {exc}. Re-stamping to head...", file=sys.stderr, flush=True)
+            command.stamp(config, "head")
+            print("INFO: Database successfully stamped to head.", file=sys.stderr, flush=True)
+        else:
+            print(f"CRITICAL: Database migration failed with error: {exc}", file=sys.stderr, flush=True)
+            traceback.print_exc(file=sys.stderr)
+            sys.stderr.flush()
+            raise
 
 
 @asynccontextmanager

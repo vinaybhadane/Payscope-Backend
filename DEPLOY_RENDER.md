@@ -52,6 +52,7 @@ The Blueprint sets these automatically:
 | Workers | 1 |
 | Graceful shutdown | 25 seconds, within Render's default 30-second window |
 | Database pool | 3 connections, up to 2 additional connections |
+| Requests | Normal app reads queue through the database pool; no eight-connection Uvicorn rejection limit |
 | Automatic deployment | On commits to the connected branch |
 
 If using **New > Web Service** instead, enter the same settings manually and leave **Root Directory** blank for the separate repository. If deploying the entire Android repository instead, set **Root Directory** to `backend`.

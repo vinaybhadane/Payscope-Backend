@@ -106,8 +106,6 @@ def _build_dashboard_summary(db: Session, user_id: Optional[uuid.UUID]) -> Dashb
     target = _resolve_user_id(db, user_id)
     costs = get_user_commitment_costs(db, target)
     confirmed = [item for item in costs if item.is_confirmed]
-    if not confirmed and costs:
-        confirmed = [item for item in costs if item.status not in ("inactive", "ended_user_recorded", "marked_not_recurring")]
     monthly = sum((item.normalized_monthly_cost for item in confirmed), Decimal("0.00"))
     annual = sum((item.annualized_cost for item in confirmed), Decimal("0.00"))
     candidate = sum((item.annualized_cost for item in costs if item.is_candidate), Decimal("0.00"))

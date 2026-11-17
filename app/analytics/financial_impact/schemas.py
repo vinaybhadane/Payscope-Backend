@@ -199,6 +199,7 @@ class SavingsScenarioCreateRequest(BaseModel):
     description: Optional[str] = None
     selected_opportunity_ids: List[str] = Field(default_factory=list)
     selected_commitment_ids: Optional[List[uuid.UUID]] = None
+    include_candidates: bool = False
     parameters: Optional[Dict[str, Any]] = None
 
 

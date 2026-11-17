@@ -19,8 +19,10 @@ Keep credentials in .env locally and in Render environment variables when hosted
 
 - Imports validate and deduplicate PDF, CSV, XLSX or JSON transactions before saving them.
 - A completed import remains visible on the dashboard even when no recurring subscription is identified.
-- Gemini review requires at least two observed payment dates to confirm recurrence. Financial totals come from recorded amounts.
-- AI failure leaves imported records saved, with a retry action.
+- Gemini confirms recurrence from at least two observed payment dates. Single-charge services can appear as low-confidence candidates with an estimated billing cycle. Candidates are excluded from confirmed recurring totals and renewal dates until the user confirms them.
+- Analytics uses all successful statement debits, including one-off purchases. Categories and merchant labels come from the review; unclassified payments remain visible as Uncategorized if AI is unavailable.
+- Savings can include candidates only through an explicit planning request. The server recalculates amounts and stores that the scenario contains estimates.
+- Transient Gemini failures are retried with bounded backoff. AI failure leaves imported records and spending analytics available, with a retry action.
 - Workspace APIs require a verified Firebase ID token or signed guest token.
 - Readiness checks PostgreSQL. Neo4j outages use a clearly labelled relational graph projection.
 - Migrations run before startup. Neon migrations use the direct endpoint; ordinary queries use the configured runtime endpoint.

@@ -62,7 +62,8 @@ def extract_pdf(content: bytes):
         cached = _cache.get(key)
         if cached and time.monotonic() - cached[0] < 300:
             return cached[1]
-    response = requests.post(
+    from app.core.gemini import post_generation
+    response = post_generation(
         f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent",
         headers={"x-goog-api-key": settings.GEMINI_API_KEY},
         json={"systemInstruction": {"parts": [{"text":

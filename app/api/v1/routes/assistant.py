@@ -27,7 +27,8 @@ def chat_with_assistant(request: ChatRequest, db: Session = Depends(get_db)):
     history = [{"role": "user" if m.role == "user" else "model", "parts": [{"text": m.content}]}
                for m in request.history[-10:] if m.role in ("user", "assistant")]
     try:
-        response = requests.post(
+        from app.core.gemini import post_generation
+        response = post_generation(
             f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent",
             headers={"x-goog-api-key": settings.GEMINI_API_KEY},
             json={"systemInstruction": {"parts": [{"text":

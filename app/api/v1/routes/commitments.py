@@ -545,6 +545,9 @@ def update_commitment(
         if update_data.status not in {"user_confirmed", "marked_not_recurring"}:
             raise HTTPException(400, "Unsupported review decision.")
         commitment.status = update_data.status
+        if update_data.status == 'user_confirmed':
+            last_d = commitment.last_seen_at.date() if isinstance(commitment.last_seen_at, datetime) else commitment.last_seen_at
+            commitment.next_expected_date = estimate_next_expected_date(last_d, commitment.cadence)
 
     commitment.user_decision = "corrected"
     commitment.user_decision_at = now

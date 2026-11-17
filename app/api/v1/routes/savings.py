@@ -86,7 +86,8 @@ def create_scenario(
         from app.analytics.financial_impact.commitment_costs import get_user_commitment_costs
         from decimal import Decimal
         from types import SimpleNamespace
-        costs = [c for c in get_user_commitment_costs(db, target_user_id) if c.is_confirmed]
+        costs = [c for c in get_user_commitment_costs(db, target_user_id)
+                 if c.is_confirmed or (payload.include_candidates and c.is_candidate and c.annualized_cost > 0)]
         by_id = {str(c.commitment_id): c for c in costs}
         selected_c_ids = list(dict.fromkeys(str(cid) for cid in payload.selected_commitment_ids))
         if not set(selected_c_ids) <= by_id.keys():
@@ -97,6 +98,9 @@ def create_scenario(
             selected_annual_savings=savings, selected_monthly_savings=savings/12,
             percentage_reduction=savings/baseline*100 if baseline else 0)
 
+    parameters = dict(payload.parameters or {})
+    if payload.include_candidates:
+        parameters.update(include_candidates=True, estimates_only=True)
     scenario = SavingsScenario(
         user_id=target_user_id,
         name=payload.name,
@@ -108,7 +112,7 @@ def create_scenario(
         annual_savings=calc_res.selected_annual_savings,
         monthly_savings=calc_res.selected_monthly_savings,
         percentage_reduction=calc_res.percentage_reduction,
-        parameters=payload.parameters or {},
+        parameters=parameters,
     )
     db.add(scenario)
     db.commit()

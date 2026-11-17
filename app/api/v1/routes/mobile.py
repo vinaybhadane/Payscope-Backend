@@ -33,6 +33,8 @@ def dashboard(db: Session = Depends(get_db)):
     recent = db.scalars(select(Transaction).where(Transaction.user_id == uid)
         .order_by(Transaction.transaction_date.desc(), Transaction.id).limit(50)).all()
     ai_state = db.get(WorkspaceIntelligence, uid)
+    from app.analytics.statement_spending import statement_spending
+    spending = statement_spending(db, uid, ai_state.report if ai_state and ai_state.report else {})
     summary = _build_dashboard_summary(db, uid)
     commitments = list(db.scalars(select(Commitment).where(Commitment.user_id == uid)
         .options(selectinload(Commitment.transactions), selectinload(Commitment.price_events),
@@ -84,9 +86,9 @@ def dashboard(db: Session = Depends(get_db)):
         active_subscriptions_count=summary.kpis.active_commitments_count,
         potential_savings_annual=summary.kpis.potential_annual_savings,
         price_hikes_count=len(hikes), currency="INR", commitments=items,
-        historical_months=summary.financial_overview.historical_months,
-        historical_amounts=summary.financial_overview.historical_amounts,
-        category_distribution=summary.category_distribution, daily_spend=daily,
+        historical_months=spending['historical_months'], historical_amounts=spending['historical_amounts'],
+        category_distribution=spending['category_distribution'], daily_spend=spending['daily_spend'],
+        statement_analytics=spending,
         upcoming=sorted(upcoming, key=lambda p: p["due_date"]), price_hikes=hikes,
         imported_transactions_count=transaction_count, imported_statements_count=import_count,
         analysis_status=ai_state.status if ai_state else "empty",

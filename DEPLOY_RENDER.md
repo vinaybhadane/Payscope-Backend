@@ -69,10 +69,10 @@ Copy the working values from your existing local `backend/.env` into Render. Do 
 | `GEMINI_MODEL` | The working model name from your local `.env` |
 | `NEO4J_URI` | Your Aura connection URI, normally `neo4j+s://...` |
 | `NEO4J_PASSWORD` | Your Aura password |
-| `NEO4J_USERNAME` | The exact working username from local `.env`; this instance uses a custom database user |
+| `NEO4J_USERNAME` | Set automatically to this deployment's verified database user, `9d021978` |
 | `NEO4J_DATABASE` | Your existing Aura database name |
 
-The Blueprint generates `API_SESSION_SECRET` automatically. Keep that generated value stable across future deployments; changing it invalidates guest sessions. Copy `NEO4J_USERNAME` from the working local `.env`. The Blueprint deliberately leaves it user-configured instead of overwriting it with a default account.
+The Blueprint generates `API_SESSION_SECRET` automatically. Keep that generated value stable across future deployments; changing it invalidates guest sessions. This PayScope deployment uses the non-secret Aura username `9d021978`, configured in the Blueprint. When deploying against a different Aura instance, change that value to its database username. Passwords remain private Render environment variables.
 
 Optional `DATABASE_URL_UNPOOLED`: your direct Neon connection string. When omitted, the app converts a Neon `-pooler` hostname to its matching direct hostname for migrations only. Normal application queries keep using `DATABASE_URL`.
 

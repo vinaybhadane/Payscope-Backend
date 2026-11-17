@@ -41,7 +41,7 @@ services:
       - key: NEO4J_URI
         sync: false
       - key: NEO4J_USERNAME
-        sync: false
+        value: "9d021978"
       - key: NEO4J_PASSWORD
         sync: false
       - key: NEO4J_DATABASE

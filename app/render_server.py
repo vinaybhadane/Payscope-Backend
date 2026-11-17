@@ -13,7 +13,7 @@ def server_options(environment: Mapping[str, str] | None = None) -> dict:
     if not 1 <= port <= 65535:
         raise ValueError("PORT must be between 1 and 65535.")
     return dict(host="0.0.0.0", port=port, workers=1, proxy_headers=True,
-                limit_concurrency=8, timeout_keep_alive=5, timeout_graceful_shutdown=290)
+                limit_concurrency=8, timeout_keep_alive=5, timeout_graceful_shutdown=25)
 
 
 def validate_configuration(config=settings) -> None:

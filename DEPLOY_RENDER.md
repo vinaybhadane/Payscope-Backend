@@ -50,6 +50,7 @@ The Blueprint sets these automatically:
 | Health check | `/api/v1/ready` |
 | Port | Render's `PORT` environment variable |
 | Workers | 1 |
+| Graceful shutdown | 25 seconds, within Render's default 30-second window |
 | Database pool | 3 connections, up to 2 additional connections |
 | Automatic deployment | On commits to the connected branch |
 
@@ -120,6 +121,7 @@ Email delivery is disabled in this Blueprint until you configure it. To enable i
 | Symptom | Check |
 |---|---|
 | Build fails | Root Directory, committed `uv.lock`, Python version, and build logs |
+| Blueprint rejects `maxShutdownDelaySeconds` | Remove that field entirely for the Free plan, commit `render.yaml`, then click Retry in Render |
 | Startup asks for variables | Add the named values under Render > Environment, then redeploy |
 | Database readiness fails | Neon URL/SSL, network access rules, and migration logs |
 | Gemini review fails | Working key/model, quota and server logs; imported records remain saved |

@@ -13,6 +13,8 @@ logger = logging.getLogger('app.main')
 
 
 def run_migrations():
+    import sys
+    import traceback
     from pathlib import Path
     from alembic import command
     from alembic.config import Config
@@ -20,15 +22,31 @@ def run_migrations():
     config = Config(str(ini))
     config.set_main_option("script_location", str(ini.parent / "alembic"))
     config.set_main_option("sqlalchemy.url", settings.migration_database_url.replace("%", "%%"))
-    command.upgrade(config, "head")
+    print("INFO: Starting database migrations to head...", file=sys.stderr, flush=True)
+    try:
+        command.upgrade(config, "head")
+        print("INFO: Database migrations completed successfully.", file=sys.stderr, flush=True)
+    except Exception as exc:
+        print(f"CRITICAL: Database migration failed with error: {exc}", file=sys.stderr, flush=True)
+        traceback.print_exc(file=sys.stderr)
+        sys.stderr.flush()
+        raise
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Do not accept traffic until migrations complete; failures stop startup."""
     from starlette.concurrency import run_in_threadpool
+    import sys
+    import traceback
     if settings.RUN_MIGRATIONS:
-        await run_in_threadpool(run_migrations)
+        try:
+            await run_in_threadpool(run_migrations)
+        except Exception as exc:
+            print(f"CRITICAL: Application lifespan startup failed: {exc}", file=sys.stderr, flush=True)
+            traceback.print_exc(file=sys.stderr)
+            sys.stderr.flush()
+            raise
     from app.analytics.email_alerts import email_worker
     worker = asyncio.create_task(email_worker()) if settings.EMAIL_WORKER_ENABLED else None
     try:

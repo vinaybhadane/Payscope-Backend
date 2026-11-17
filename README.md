@@ -22,7 +22,7 @@ Keep credentials in .env locally and in Render environment variables when hosted
 - Gemini confirms recurrence from at least two observed payment dates. Single-charge services can appear as low-confidence candidates with an estimated billing cycle. Candidates are excluded from confirmed recurring totals and renewal dates until the user confirms them.
 - Analytics uses all successful statement debits, including one-off purchases. Categories and merchant labels come from the review; unclassified payments remain visible as Uncategorized if AI is unavailable.
 - Savings can include candidates only through an explicit planning request. The server recalculates amounts and stores that the scenario contains estimates.
-- Transient Gemini failures are retried with bounded backoff. AI failure leaves imported records and spending analytics available, with a retry action.
+- Transient Gemini failures are retried with bounded backoff. Exhausted or unavailable models switch to the configured compatible fallback (default: Gemini 3.5 Flash-Lite). Saved reviews identify the actual model and are reused for unchanged records. AI failure leaves imported records and spending analytics available, with a retry action.
 - Workspace APIs require a verified Firebase ID token or signed guest token.
 - Readiness checks PostgreSQL. Neo4j outages use a clearly labelled relational graph projection.
 - Migrations run before startup. Neon migrations use the direct endpoint; ordinary queries use the configured runtime endpoint.

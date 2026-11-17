@@ -41,9 +41,10 @@ class AIReviewChecks(unittest.TestCase):
 
     def test_provider_error_is_actionable_without_returning_provider_body(self):
         response = Mock(ok=False, status_code=429)
-        with patch.object(settings, 'GEMINI_API_KEY', 'unit-test'), patch('app.analytics.ai_review.requests.post', return_value=response):
-            with self.assertRaisesRegex(ValueError, 'HTTP 429'): call_gemini([])
-            response.json.assert_not_called()
+        response.json.return_value = {'error': {'message': 'private provider diagnostic', 'details': []}}
+        with patch.object(settings, 'GEMINI_API_KEY', 'unit-test'), patch('app.analytics.ai_review.requests.post', return_value=response), patch('app.core.gemini.time.sleep'):
+            with self.assertRaisesRegex(ValueError, 'HTTP 429') as error: call_gemini([])
+            self.assertNotIn('private provider diagnostic', str(error.exception))
 
     def test_truncated_generation_is_rejected(self):
         response = Mock(ok=True)

@@ -109,6 +109,8 @@ output/android/payscope-render-debug.apk
 
 Install that APK on the phone. It uses HTTPS to reach Render, so it no longer requires USB forwarding or a backend running on your PC. The existing Firebase project and Android signing configuration continue to apply. Recreate guest sample sessions when switching from the local backend; Firebase users keep access to their records when the same Firebase project and Neon database are used.
 
+Gemini uses `GEMINI_MODEL` first, then `GEMINI_FALLBACK_MODELS` when a model is unavailable or its daily quota is exhausted. The default fallback is `gemini-3.5-flash-lite`, verified with this project. Set an empty value to disable fallback. The saved review records the actual model used. Daily-limit failures are remembered until their retry time instead of repeatedly spending requests. Successful unchanged reviews are reused.
+
 ## Free-plan behavior and email
 
 Render Free sleeps after 15 minutes without incoming traffic. The next request can take about a minute to wake it. The Android client already allows longer requests for PDF/Gemini processing. Heavy PDFs or concurrent users can still exceed free-instance capacity; check Render logs and memory metrics if this happens.

@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Literal
 import requests
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 from sqlalchemy import delete, select, text
 from sqlalchemy.orm import Session
 from app.core.config import settings
@@ -47,6 +47,7 @@ class TransactionClassification(BaseModel):
 
 
 class Review(BaseModel):
+    _provider_model: str = PrivateAttr(default='')
     subscriptions: list[ReviewedSubscription]
     subscription_candidates: list[SubscriptionCandidate] = Field(default_factory=list)
     transaction_classifications: list[TransactionClassification] = Field(default_factory=list)
@@ -100,7 +101,10 @@ def call_gemini(records: list[dict]) -> Review:
     if candidate.get('finishReason') != 'STOP':
         raise ValueError('AI review was incomplete. Records saved; retry analysis.')
     output = ''.join(p.get('text', '') for p in candidate.get('content', {}).get('parts', []) if not p.get('thought'))
-    return Review.model_validate_json(output)
+    review = Review.model_validate_json(output)
+    actual_model = getattr(response, '_payscope_model', None)
+    review._provider_model = actual_model if isinstance(actual_model, str) else settings.GEMINI_MODEL
+    return review
 
 
 def review_workspace(db: Session, user_id: uuid.UUID) -> dict:
@@ -114,7 +118,7 @@ def review_workspace(db: Session, user_id: uuid.UUID) -> dict:
                 'amount': str(t.amount), 'currency': t.currency} for t in transactions]
     digest = hashlib.sha256(json.dumps(records).encode()).hexdigest()
     state = db.get(WorkspaceIntelligence, user_id)
-    if (state and state.status == 'completed' and state.model == settings.GEMINI_MODEL
+    if (state and state.status == 'completed' and (state.model == settings.GEMINI_MODEL or state.report.get('requested_model') == settings.GEMINI_MODEL)
             and state.report.get('schema_version') == 2 and state.report.get('source_digest') == digest):
         db.commit()
         return {'analysis_status': 'completed', 'model': state.model,
@@ -219,15 +223,17 @@ def review_workspace(db: Session, user_id: uuid.UUID) -> dict:
     for c in existing:
         if c.id not in claimed and not c.user_decision: c.status = 'inactive'
     report = {**review.model_dump(mode='json'), 'subscriptions': saved, 'subscription_candidates': candidates,
-              'transaction_count': len(records), 'source_digest': digest, 'schema_version': 2}
+              'transaction_count': len(records), 'source_digest': digest, 'schema_version': 2,
+              'requested_model': settings.GEMINI_MODEL}
     state = db.get(WorkspaceIntelligence, user_id)
     if state is None:
         state = WorkspaceIntelligence(user_id=user_id)
         db.add(state)
-    state.status, state.model, state.report, state.error, state.generated_at = 'completed', settings.GEMINI_MODEL, report, None, now
+    actual_model = review._provider_model or settings.GEMINI_MODEL
+    state.status, state.model, state.report, state.error, state.generated_at = 'completed', actual_model, report, None, now
     db.commit()
-    return {'analysis_status': 'completed', 'commitments_discovered': len(saved), 'model': settings.GEMINI_MODEL,
+    return {'analysis_status': 'completed', 'commitments_discovered': len(saved), 'model': actual_model,
             'candidates_discovered': len(candidates),
-            'active_count': sum(s['status'] in ('active', 'user_confirmed') for s in saved),
-            'candidate_count': sum(s['status'] == 'candidate' for s in saved),
-            'needs_review_count': sum(s['status'] == 'review_required' for s in saved)}
+            'active_count': sum(s['status'] in ('active', 'user_confirmed') for s in saved + candidates),
+            'candidate_count': sum(s['status'] == 'candidate' for s in saved + candidates),
+            'needs_review_count': sum(s['status'] == 'review_required' for s in saved + candidates)}

@@ -1,0 +1,52 @@
+# Deploy the contents of backend/ as a separate repository.
+services:
+  - type: web
+    name: payscope-api
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: uv sync --frozen --no-dev --no-editable
+    startCommand: .venv/bin/python -m app.render_server
+    healthCheckPath: /api/v1/ready
+    autoDeployTrigger: commit
+    maxShutdownDelaySeconds: 300
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: UV_VERSION
+        value: 0.13.8
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: RUN_MIGRATIONS
+        value: "true"
+      - key: DB_POOL_SIZE
+        value: "3"
+      - key: DB_MAX_OVERFLOW
+        value: "2"
+      - key: API_SESSION_SECRET
+        generateValue: true
+      - key: ALLOW_GUEST_SESSIONS
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        sync: false
+      - key: NEO4J_ENABLED
+        value: "true"
+      - key: NEO4J_URI
+        sync: false
+      - key: NEO4J_USERNAME
+        value: neo4j
+      - key: NEO4J_PASSWORD
+        sync: false
+      - key: NEO4J_DATABASE
+        sync: false
+      - key: NEO4J_MAX_CONNECTION_POOL_SIZE
+        value: "5"
+      # Enable only after adding the optional Brevo settings. Free hosts sleep.
+      - key: EMAIL_WORKER_ENABLED
+        value: "false"

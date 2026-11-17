@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.graph.config import neo4j_settings
-from app.graph.driver import check_neo4j_connection, get_neo4j_driver
+from app.graph.driver import check_neo4j_connection, get_neo4j_driver, neo4j_connection_problem
 from app.graph.exceptions import (
     Neo4jConnectionError,
     Neo4jDisabledError,
@@ -55,11 +55,15 @@ def get_graph_health(db: Session = Depends(get_db)) -> GraphHealthResponse:
                 message = f"Neo4j active and connected to {neo4j_settings.DATABASE} ({node_count} nodes, {edge_count} relationships)."
             else:
                 message = f"Neo4j is enabled but unreachable at {neo4j_settings.URI}."
+                code = neo4j_connection_problem()
+                if code and 'Security.Unauthorized' in code:
+                    message = 'Neo4j authentication failed. Check NEO4J_USERNAME and NEO4J_PASSWORD in the server environment.'
         except Exception as e:
             logger.warning("Graph health check failed: %s", e)
             message = "Neo4j is temporarily unavailable."
 
     return GraphHealthResponse(
+        diagnostic_code=neo4j_connection_problem() if enabled and not connected else None,
         status="healthy" if (not enabled or connected) else "degraded",
         enabled=enabled,
         connected=connected,

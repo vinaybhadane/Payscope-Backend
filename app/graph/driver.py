@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 _driver_instance: Optional[Driver] = None
 _driver_lock = Lock()
+_connection_problem: Optional[str] = None
 
 
 def secure_driver_options(uri: str):
@@ -76,13 +77,21 @@ def check_neo4j_connection() -> bool:
     if not neo4j_settings.ENABLED:
         return False
 
-    driver = get_neo4j_driver()
-    if not driver:
-        return False
-
+    global _connection_problem
     try:
+        driver = get_neo4j_driver()
+        if not driver:
+            return False
         driver.verify_connectivity()
+        _connection_problem = None
         return True
     except Exception as e:
-        logger.warning(f"Neo4j connectivity check failed: {e}")
+        code = getattr(e, 'code', None)
+        _connection_problem = code if isinstance(code, str) and code.startswith('Neo.') else type(e).__name__
+        logger.warning("Neo4j connectivity check failed (%s)", _connection_problem)
         return False
+
+
+def neo4j_connection_problem() -> Optional[str]:
+    """A safe error category, never a password or raw provider response."""
+    return _connection_problem
